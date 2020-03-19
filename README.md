@@ -3,7 +3,7 @@ Update: March 15, 2020
 
 ## Introduction
 
-This workshop will walk you through the process of installing **Anypoint Service Mesh** on **Google Cloud Platform**. You will deploy a demo application and secure using Anypoint Service Mesh.
+This cookbook will walk you through the process of installing **Anypoint Service Mesh** on **Google Cloud Platform**. You will deploy a demo application and secure using Anypoint Service Mesh.
 
 ***To log issues***, click here to go to the [github](https://github.com/mulesoft-consulting/ASMonGCP/issues) repository issue submission form.
 
