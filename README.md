@@ -1,5 +1,5 @@
 ![](images/title.png)  
-Update: March 15, 2020
+Update: April 1, 2020
 
 ## Introduction
 
@@ -18,7 +18,7 @@ This cookbook will walk you through the process of installing **Anypoint Service
 ## Required Artifacts
 
 - The following lab requires a Google Cloud Platform account.
-- Enable Anypoint Service Mesh in your STGX Orginization
+- Enable Anypoint Service Mesh in your STGX Organization (this is required before GA)
 
 <a id="installgke"></a>
 ## Create Google Kubernetes cluster
@@ -73,7 +73,7 @@ This cookbook will walk you through the process of installing **Anypoint Service
 
     ![](images/image9.png)
 
-- Open Terminal window. If you don't already have the **gcloud** cli installed following the [Gpoogle Docs](https://cloud.google.com/pubsub/docs/quickstart-cli) to first install gcloud cli.
+- Open Terminal window. If you don't already have the **gcloud** cli installed following the [Google Docs](https://cloud.google.com/pubsub/docs/quickstart-cli) to first install gcloud cli.
 
 - Paste gcloud **connect to cluster** command from previous step.
 
@@ -92,7 +92,7 @@ kubectl get namespaces
 
 - To install **Istio** we will be using the **Istio CLI**. For completed instructions [Istio Docs](https://istio.io/docs/setup/install/istioctl/)
 
-- Use the following command to download **Istio CLI** into your directory of choice. In this example I am using diretory **/Users/dennis.foley/ASM**
+- Use the following command to download **Istio CLI** into your directory of choice. In this example I am using directory **/Users/dennis.foley/ASM**
 
 ```bash
 curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.4.3 sh -
@@ -100,7 +100,7 @@ curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.4.3 sh -
 
 ![](images/image11.png)
 
-- Change into newly downloaded dirctory
+- Change into newly downloaded directory
 
 ```bash
 cd istio-1.4.3/
@@ -155,7 +155,7 @@ ls
 
 ### **STEP 7**: Deploy Demo Application
 
-- We will now deploy the demo application to your kubernetes cluster. The deployment script takes the namesapce as a parameter. We will be using **nto-payment** for namespace
+- We will now deploy the demo application to your kubernetes cluster. The deployment script takes the namespace as a parameter. We will be using **nto-payment** for namespace
 
 ```bash
 ./deployAll.sh nto-payment
@@ -172,7 +172,7 @@ kubectl get services -n nto-payment
 
 ![](images/image17.png)
 
-- Once all services are running you can test out the application. To access the applicastion open you browser and go to the following URL
+- Once all services are running you can test out the application. To access the application open you browser and go to the following URL
 
 ```bash
 http://<EXTERNAL-IP>:3000
@@ -182,7 +182,7 @@ http://<EXTERNAL-IP>:3000
 
 - To test out the application follow these steps:
 
-    - Select Item to puchase
+    - Select Item to purchase
     - Click **Add to Cart**
     - Click **Checkout**
     - Leave default email and click **CONTINUE**
@@ -243,7 +243,7 @@ kubectl get pods -n service-mesh
 
 - Next we want to deploy the Anypoint Service Mesh adapter in each namespace that we want to monitor API's. For this example we will just be doing the **nto-payment** namespace that contains the demo application.
 
-- To deply the ASM Adapter we will be using a Kubernetes custom resource definition (CRD). In the ServiceMeshDemo repostory we have create the file **nto-payment-asm-adapter.yaml** that can mofidied.
+- To deploy the ASM Adapter we will be using a Kubernetes custom resource definition (CRD). In the **ServiceMeshDemo** repository we have create the file **nto-payment-asm-adapter.yaml** that can modified.
 
     ![](images/image23.png)
 
@@ -265,7 +265,7 @@ asmctl adapter list
 
 ### **STEP 10**: Create APi's
 
-- We will now use now use Anypoint Service Mesh autodiscovery to create API's in Anypoint Platform. We will create API's for Customer, Inventory, Order and Payments services that are used by the demo application.
+- We will now use now use Anypoint Service Mesh auto discovery to create API's in Anypoint Platform. We will create API's for Customer, Inventory, Order and Payments services that are used by the demo application.
 
 - Modify the Kubernetes custom resource definition (CRD) file **demo-apis.yaml**. 
 
@@ -312,7 +312,7 @@ asmctl api binding list
 
 - If you go may to **API Management** in Anypoint Platform and refresh the page you will see that the API's are now **Active**. 
 
-- You have complted the installation of Anypoint Service Mesh. In the next secion we will walk through appling some policies against the kubernetes services.
+- You have completed the installation of Anypoint Service Mesh. In the next section we will walk through applying some policies against the kubernetes services.
 
 <a id="applypolicy"></a>
 ## Apply API Management Policies
@@ -323,7 +323,7 @@ asmctl api binding list
 
     ![](images/image32.png)
 
-- Click **Policies** and then click **Apply New Policy**. Expand **Rate Limiting** select newest version and click **Configure Polcy**. 
+- Click **Policies** and then click **Apply New Policy**. Expand **Rate Limiting** select newest version and click **Configure Policy**. 
 
     ![](images/image33.png)
 
@@ -341,7 +341,7 @@ asmctl api binding list
 
 - Navigate back to the ***API Administration** page. Click on the version number for **payment-api**.
 
-- Click **Policies** and then click **Apply New Policy**. Expand **Client ID enforcement** select newest version and click **Configure Polcy**. 
+- Click **Policies** and then click **Apply New Policy**. Expand **Client ID enforcement** select newest version and click **Configure Policy**. 
 
     ![](images/image36.png)
 
