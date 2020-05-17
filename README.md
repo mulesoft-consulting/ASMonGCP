@@ -1,5 +1,5 @@
 ![](images/title.png)  
-Update: April 1, 2020
+Update: May 18, 2020
 
 ## Introduction
 
@@ -9,20 +9,44 @@ This cookbook will walk you through the process of installing **Anypoint Service
 
 ## Objectives
 
-- [Create Kubernetes cluster on Google Kubernetes Engine (GKE)](#installgke)
-- [Install Istio](#installistio)
-- [Deploy Demo Application](#deploydemo)
-- [Install Anypoint Service Mesh](#installasm)
-- [Apply API Management Policies](#applypolicy)
+- **[Create Kubernetes Google Kubernetes Engine (GKE)](#installaks)**
+    - [**STEP 1**: Create Google VPC](#step1)
+    - [**STEP 2**: Create Kubernetes Cluster](#step2)
+    - [**STEP 3**: Verify Cluster and Connect](#step3)
+
+- **[Install Istio](#installistio)**
+    - [**STEP 4**: Download and Install Istio CLI](#step4)
+    - [**STEP 5**: Install Istio using CLI](#step5)
+
+- **[Deploy Demo Application](#deploydemo)**
+    - [**STEP 6**: Clone Demo Application](#step6)
+    - [**STEP 7**: Deploy Demo Application](#step7)
+
+- **[Install Anypoint Service Mesh](#installasm)**
+    - [**STEP 8**: Install Anypoint Service Mesh](#step8)
+    - [**STEP 9**: Install Anypoint Service Mesh Adapter](#step9)
+    - [**STEP 10**: Create API's](#step10)
+    - [**STEP 11**: Binding API's with Services](#step11)
+
+- **[Apply API Management Policies](#applypolicy)**
+    - [**STEP 12**: Apply Rate Limiting Policy to Customer API](#step12)
+    - [**STEP 13**: Apply Client ID enforcement Policy to Payment API](#step13)
+- **[Report & Monitor API Analytics](#reportmonitoranalytics)**
+	- [**STEP 14:** View Analytics of Customer API & Payment API](#step14)
+	- [**STEP 15:** View Dashboards of Customer API & Payment API](#step15)
+
 
 ## Required Artifacts
 
 - The following lab requires a Google Cloud Platform account.
-- Enable Anypoint Service Mesh in your STGX Organization (this is required before GA)
+- Access to [Anypoint Platform](https://anypoint.mulesoft.com/)
+
+For complete instructions please visit [MuleSoft Documentation](https://docs.mulesoft.com/service-mesh/1.0/)
 
 <a id="installgke"></a>
 ## Create Google Kubernetes cluster
 
+<a id="step1"></a>
 ### **STEP 1**: Create Google VPC
 
 - From any browser, go to the URL to access Google Cloud Console:
@@ -43,6 +67,7 @@ This cookbook will walk you through the process of installing **Anypoint Service
 
     ![](images/image3.png)
 
+<a id="step2"></a>
 ### **STEP 2**: Create Kubernetes Cluster
 
 - Click on the upper left navigation bar. Select **Clusters**
@@ -55,7 +80,7 @@ This cookbook will walk you through the process of installing **Anypoint Service
 
     ![](images/image5.png)
 
-- Expand **default-pool** and select **Nodes**. Per [documentation](https://beta.docs.stgx.mulesoft.com/beta-service-mesh/service-mesh/1.0/prepare-to-install-service-mesh#hardware-requirements) change Machine type to **n1-standard-4**
+- Expand **default-pool** and select **Nodes**. Per [documentation](https://docs.mulesoft.com/service-mesh/1.0/prepare-to-install-service-mesh#hardware-requirements) change Machine type to **n1-standard-4**
 
     ![](images/image6.png)
 
@@ -67,6 +92,7 @@ This cookbook will walk you through the process of installing **Anypoint Service
 
     ![](images/image8.png)
 
+<a id="step3"></a>
 ### **STEP 3**: Verify Cluster and Connect
 
 - From the Kubernetes Cluster page click **Connect**. From the **Connect to the cluster** popup copy the **Command-line access** command.
@@ -88,6 +114,7 @@ kubectl get namespaces
 <a id="installistio"></a>
 ## Install Istio
 
+<a id="step4"></a>
 ### **STEP 4**: Download and Install Istio CLI
 
 - To install **Istio** we will be using the **Istio CLI**. For completed instructions [Istio Docs](https://istio.io/docs/setup/install/istioctl/)
@@ -95,7 +122,7 @@ kubectl get namespaces
 - Use the following command to download **Istio CLI** into your directory of choice. In this example I am using directory **/Users/dennis.foley/ASM**
 
 ```bash
-curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.4.3 sh -
+curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.5.2 sh -
 ```
 
 ![](images/image11.png)
@@ -103,7 +130,7 @@ curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.4.3 sh -
 - Change into newly downloaded directory
 
 ```bash
-cd istio-1.4.3/
+cd istio-1.5.2/
 ```
 
 - Add current directly to path
@@ -114,11 +141,41 @@ export PATH=$PWD/bin:$PATH
 
 ![](images/image12.png)
 
+<a id="step5"></a>
 ### **STEP 5**: Install Istio using CLI
 - To install **Istio** we will be using the **Istio CLI**. From the **istio** directory run the following command
 
+- First, create **istio-manifest.yaml** with the following content:
+
 ```bash
-istioctl manifest apply --set profile=demo --set values.global.disablePolicyChecks=false,values.pilot.policy.enabled=true
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+spec:
+  profile: default
+  components:
+    policy:
+      enabled: true
+    sidecarInjector:
+      enabled: true
+    citadel:
+      enabled: true
+    telemetry:
+      enabled: true
+  addonComponents:
+    prometheus:
+      enabled: false
+  values:
+    global:
+      disablePolicyChecks: false
+    telemetry:
+      v1:
+        enabled: true
+      v2:
+        enabled: false
+```
+
+```bash
+istioctl manifest apply -f istio-manifest.yaml
 ```
 
 ![](images/image13.png)
@@ -134,9 +191,10 @@ kubectl get namespaces
 <a id="deploydemo"></a>
 ## Deploy Demo Application
 
+<a id="step6"></a>
 ### **STEP 6**: Clone Demo Application
 
-- For our demo application will will be using **Northern Trail Outfitters** shopping cart application. This web based UI will call several services to complete the order.
+- For our demo application will will be using **Mythical Retail** shopping cart application. This web based UI will call several services to complete the order.
 
 - Clone the demo application git repository onto your local machine.
 
@@ -153,12 +211,13 @@ ls
 
 ![](images/image15.png)
 
+<a id="step7"></a>
 ### **STEP 7**: Deploy Demo Application
 
-- We will now deploy the demo application to your kubernetes cluster. The deployment script takes the namespace as a parameter. We will be using **nto-payment** for namespace
+- We will now deploy the demo application to your kubernetes cluster. The deployment script takes the namespace as a parameter. We will be using **mythical-payment** for namespace
 
 ```bash
-./deployAll.sh nto-payment
+./deployAll.sh mythical-payment
 ```
 
 ![](images/image16.png)
@@ -166,8 +225,8 @@ ls
 - You can monitory the deployment with the following commands
 
 ```bash
-kubectl get pods -n nto-payment
-kubectl get services -n nto-payment
+kubectl get pods -n mythical-payment
+kubectl get services -n mythical-payment
 ```
 
 ![](images/image17.png)
@@ -194,6 +253,7 @@ http://<EXTERNAL-IP>:3000
 <a id="installasm"></a>
 ## Install Anypoint Service Mesh
 
+<a id="step8"></a>
 ### **STEP 8**: Install Anypoint Service Mesh
 
 For complete instructions and documentation please visit [MuleSoft Docs](https://beta.docs.stgx.mulesoft.com/beta-service-mesh/service-mesh/1.0/service-mesh-overview-and-landing-page)
@@ -212,18 +272,18 @@ kubectl -n istio-system get cm istio -o yaml | sed -e 's/disableMixerHttpReports
 curl -Ls http://anypoint.mulesoft.com/servicemesh/xapi/v1/install > asmctl && chmod +x asmctl
 ```
 
-- Since ASM is Pre-GA we will be using a staging environment. To have the **asmctl** connect to the correct environment set the variable **SERVICEMESH_PLATFORM_URI**
-
-```bash
-export SERVICEMESH_PLATFORM_URI=https://stgx.anypoint.mulesoft.com
-```
-
 - Now we are ready to install Anypoint Service Mesh. To do this we will call **asmctl install**. This command requires 3 parameters
     - Client Id
     - Client Secret
     - Service Mesh license
 
-- If you are not familiar with how to get environment Client Id and Secret please visit [MuleSoft Docs](https://docs.mulesoft.com/access-management/environments)
+- If you are not familiar with how to get environment Client Id and Secret, navigate to **API Manager** and click on the **Environment Information** button.
+
+- If you are not familiar with how to get environment Client Id and Secret, navigate to **API Manager** and click on the **Environment Information** button.
+
+![](images/image-env-info1.png)
+
+![](images/image-env-info2.png)
 
 ```bash
 ./asmctl install
@@ -239,6 +299,7 @@ kubectl get pods -n service-mesh
 
 ![](images/image22.png)
 
+<a id="step9"></a>
 ### **STEP 9**: Install Anypoint Service Mesh Adapter
 
 - Next we want to deploy the Anypoint Service Mesh adapter in each namespace that we want to monitor API's. For this example we will just be doing the **nto-payment** namespace that contains the demo application.
@@ -250,7 +311,7 @@ kubectl get pods -n service-mesh
 - Replace **```<CLIENT ID>```** and **```<CLIENT SECRET>```** with values for your environment. Save file and run the following command
 
 ```bash
-kubectl apply -f nto-payment-asm-adapter.yaml
+kubectl apply -f mythical-payment-asm-adapter.yaml
 ```
 
 ![](images/image24.png)
@@ -263,9 +324,61 @@ asmctl adapter list
 
 ![](images/image25.png)
 
-### **STEP 10**: Create APi's
+- After you provision the adapter, you must set the `istio-injection=enabled` label on the namespace by runnning the following command
+
+```bash
+kubectl label ns mythical-payment istio-injection=enabled --overwrite
+```
+
+- Redeploy all the existing applications in the namepsace. See Step 6.2 in [MuleSoft Docs](https://docs.mulesoft.com/service-mesh/1.0/provision-adapter-configure-service-mesh-CLI)
+
+```bash
+kubectl get deployments -n mythical-payment
+```
+
+```bash
+kubectl -n mythical-payment patch deploy customer-app --type=json -p='[{"op": "replace", "path": "/spec/template/metadata/labels/service-mesh.mulesoft.com","value":"enable"}]'
+```
+
+```bash
+kubectl -n mythical-payment patch deploy inventory-app --type=json -p='[{"op": "replace", "path": "/spec/template/metadata/labels/service-mesh.mulesoft.com","value":"enable"}]'
+```
+
+```bash
+kubectl -n mythical-payment patch deploy order-app --type=json -p='[{"op": "replace", "path": "/spec/template/metadata/labels/service-mesh.mulesoft.com","value":"enable"}]'
+```
+
+```bash
+kubectl -n mythical-payment patch deploy payment-app --type=json -p='[{"op": "replace", "path": "/spec/template/metadata/labels/service-mesh.mulesoft.com","value":"enable"}]'
+```
+
+```bash
+kubectl -n mythical-payment patch deploy service-mesh-ui --type=json -p='[{"op": "replace", "path": "/spec/template/metadata/labels/service-mesh.mulesoft.com","value":"enable"}]'
+```
+
+```bash
+kubectl get pods -n mythical-payment
+```
+
+![](images/image25.5.png)
+
+- Verify the Envoy sidecar is injected within each pod in the Kubernetes Cluster by running the following command
+
+```bash
+asmctl management check sidecar --namespace=mythical-payment
+```
+
+![](images/image25.7.png)
+
+<a id="step10"></a>
+### **STEP 10**: Create API's
 
 - We will now use now use Anypoint Service Mesh auto discovery to create API's in Anypoint Platform. We will create API's for Customer, Inventory, Order and Payments services that are used by the demo application.
+
+- Before creating the APIs, ensure the Anypoint Platform user has **API Manager Environment Administrator** permission, in addition to **Manage APIs Configuration**. This can be done by your organization admin in **Access Management*.
+
+![](images/image-service-user-permissions.png)
+ 
 
 - Modify the Kubernetes custom resource definition (CRD) file **demo-apis.yaml**. 
 
@@ -291,6 +404,7 @@ asmctl api list
 
     ![](images/image28.png)
 
+<a id="step11"></a>
 ### **STEP 11**: Binding API's with Services
 
 - The last step is to bind the Kubernetes Services with the Anypoint Platform API's. To do this you will use the binding definition file **demo-bind-apis.yaml**. Execute the following command
@@ -317,6 +431,7 @@ asmctl api binding list
 <a id="applypolicy"></a>
 ## Apply API Management Policies
 
+<a id="step12"></a>
 ### **STEP 12**: Apply Rate Limiting Policy to Customer API
 
 - From the **API Management** Screen in Anypoint Platform click on the version number for **customer-api**
@@ -337,9 +452,9 @@ asmctl api binding list
 
 - Before moving onto the next step remove the **Rate Limiting** policy.
 
-### **STEP 13**: Apply Client ID enforcement Policy to Payment API
+<a id="step13"></a>
+### **STEP 13** Apply Client ID enforcement Policy to Payment API
 
-- Navigate back to the ***API Administration** page. Click on the version number for **payment-api**.
 
 - Click **Policies** and then click **Apply New Policy**. Expand **Client ID enforcement** select newest version and click **Configure Policy**. 
 
@@ -351,7 +466,46 @@ asmctl api binding list
 
     ![](images/image37.png)
 
-**CONGRATULATIONS!!!** You have completed install Anypoint Service Mesh and applying policies to kubernetes services via Anypoint Platform.
+
+<a id="reportmonitoranalytics"></a>
+## Report & Monitor API Analytics
+
+<a id="step14"></a>
+### **STEP 14**: View Analytics Reports Dashboards of Customer API & Payment API
+
+- From **API Manager**, click on **Analytics** on the left.
+
+![](images/image51.png)
+
+- At the top, select the desired date range, filter by the APIs, and check **Include Policy Violations**
+
+![](images/image52.png)
+
+- You can also build a report for API Analytics collected from service-service communication. The API Analytics provides insights into health of managed APIs - status code, policy violations, response time and such.  
+Follow [MuleSoft API Analytics Documentation](https://docs.mulesoft.com/api-manager/2.x/analytics-event-api#creating-a-report) to create an API Analytics report for all APIs and review if APIs are working as expected.
+
+![](images/image53.png)
+
+- Click on *Run* of the report, you could download the report in the browser or view the report usring curl with the report URL to look at more details.
+
+![](images/image54.png)
+[Violated Policy Name.csv](Violated%20Policy%20Name.csv)
+
+<a id="step15"></a>
+### **STEP 15**: View Dashboards of Customer API & Payment API
+- Navigate to the **Anypoint Monitoring** from either Anypoint Platform home page, or the hamburger menu at the top left corner.
+
+- You can click on **Built-in dashboards** on the left to check out what's populated for the Customer & Payment APIs. In the drop-down, choose the **environment**, **resource name**, and the **API version / Instance**, and click on **View**. 
+
+![](images/image48.png)
+
+- At the top right corner of the dashboard, adjust the time period and turn on Auto-Refresh for **Customer API**. 
+
+![](images/image49.png)
+
+- Repeat the above and choose **Payment API** this time and check out its Analytics as well. 
+
+![](images/image50.png)
 
 
-
+**CONGRATULATIONS!!!** You have completed installing Anypoint Service Mesh, applying policies to kubernetes services, reporting and monitoring the analytics of these non-Mule services via Anypoint Platform.
