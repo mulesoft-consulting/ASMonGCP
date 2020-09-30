@@ -1,5 +1,5 @@
 ![](images/title.png)  
-Update: May 18, 2020
+Update: September 29, 2020
 
 ## Introduction
 
@@ -41,7 +41,7 @@ This cookbook will walk you through the process of installing **Anypoint Service
 - The following lab requires a Google Cloud Platform account.
 - Access to [Anypoint Platform](https://anypoint.mulesoft.com/)
 
-For complete instructions please visit [MuleSoft Documentation](https://docs.mulesoft.com/service-mesh/1.0/)
+For complete instructions please visit [MuleSoft Documentation](https://docs.mulesoft.com/service-mesh/1.1/)
 
 <a id="installgke"></a>
 ## Create Google Kubernetes cluster
@@ -80,7 +80,11 @@ For complete instructions please visit [MuleSoft Documentation](https://docs.mul
 
     ![](images/image5.png)
 
-- Expand **default-pool** and select **Nodes**. Per [documentation](https://docs.mulesoft.com/service-mesh/1.0/prepare-to-install-service-mesh#hardware-requirements) change Machine type to **n1-standard-4**
+- Select **Master Version** of **1.16.x or higher**
+
+    ![](images/image5.5.png)
+    
+- Expand **default-pool** and select **Nodes**. Per [documentation](https://docs.mulesoft.com/service-mesh/1.1/prepare-to-install-service-mesh#hardware-requirements) change Machine type to **e2-standard-4**
 
     ![](images/image6.png)
 
@@ -122,7 +126,7 @@ kubectl get namespaces
 - Use the following command to download **Istio CLI** into your directory of choice. In this example I am using directory **/Users/dennis.foley/ASM**
 
 ```bash
-curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.5.2 sh -
+curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.7.2 sh -
 ```
 
 ![](images/image11.png)
@@ -130,7 +134,7 @@ curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.5.2 sh -
 - Change into newly downloaded directory
 
 ```bash
-cd istio-1.5.2/
+cd istio-1.7.2/
 ```
 
 - Add current directly to path
@@ -143,39 +147,10 @@ export PATH=$PWD/bin:$PATH
 
 <a id="step5"></a>
 ### **STEP 5**: Install Istio using CLI
-- To install **Istio** we will be using the **Istio CLI**. From the **istio** directory run the following command
-
-- First, create **istio-manifest.yaml** with the following content:
+- To install **Istio** we will be using the **Istio CLI**. From the **istio** directory run the following command. At the prompt **Proceed? (y/N)** enter **y**
 
 ```bash
-apiVersion: install.istio.io/v1alpha1
-kind: IstioOperator
-spec:
-  profile: default
-  components:
-    policy:
-      enabled: true
-    sidecarInjector:
-      enabled: true
-    citadel:
-      enabled: true
-    telemetry:
-      enabled: true
-  addonComponents:
-    prometheus:
-      enabled: false
-  values:
-    global:
-      disablePolicyChecks: false
-    telemetry:
-      v1:
-        enabled: true
-      v2:
-        enabled: false
-```
-
-```bash
-istioctl manifest apply -f istio-manifest.yaml
+istioctl install
 ```
 
 ![](images/image13.png)
@@ -256,15 +231,7 @@ http://<EXTERNAL-IP>:3000
 <a id="step8"></a>
 ### **STEP 8**: Install Anypoint Service Mesh
 
-For complete instructions and documentation please visit [MuleSoft Docs](https://beta.docs.stgx.mulesoft.com/beta-service-mesh/service-mesh/1.0/service-mesh-overview-and-landing-page)
-
-- First lets enable API Analytics by setting the **disableMixerHttpReports** flag to false:
-
-```bash
-kubectl -n istio-system get cm istio -o yaml | sed -e 's/disableMixerHttpReports: true/disableMixerHttpReports: false/g' | kubectl replace -f -
-```
-
-![](images/image20.png)
+For complete instructions and documentation please visit [MuleSoft Docs](https://docs.mulesoft.com/service-mesh/1.1/)
 
 - Download the latest Anypoint Service Mesh CLI and make it executable
 
@@ -323,52 +290,6 @@ asmctl adapter list
 ```
 
 ![](images/image25.png)
-
-- After you provision the adapter, you must set the `istio-injection=enabled` label on the namespace by runnning the following command
-
-```bash
-kubectl label ns mythical-payment istio-injection=enabled --overwrite
-```
-
-- Redeploy all the existing applications in the namepsace. See Step 6.2 in [MuleSoft Docs](https://docs.mulesoft.com/service-mesh/1.0/provision-adapter-configure-service-mesh-CLI)
-
-```bash
-kubectl get deployments -n mythical-payment
-```
-
-```bash
-kubectl -n mythical-payment patch deploy customer-app --type=json -p='[{"op": "replace", "path": "/spec/template/metadata/labels/service-mesh.mulesoft.com","value":"enable"}]'
-```
-
-```bash
-kubectl -n mythical-payment patch deploy inventory-app --type=json -p='[{"op": "replace", "path": "/spec/template/metadata/labels/service-mesh.mulesoft.com","value":"enable"}]'
-```
-
-```bash
-kubectl -n mythical-payment patch deploy order-app --type=json -p='[{"op": "replace", "path": "/spec/template/metadata/labels/service-mesh.mulesoft.com","value":"enable"}]'
-```
-
-```bash
-kubectl -n mythical-payment patch deploy payment-app --type=json -p='[{"op": "replace", "path": "/spec/template/metadata/labels/service-mesh.mulesoft.com","value":"enable"}]'
-```
-
-```bash
-kubectl -n mythical-payment patch deploy service-mesh-ui --type=json -p='[{"op": "replace", "path": "/spec/template/metadata/labels/service-mesh.mulesoft.com","value":"enable"}]'
-```
-
-```bash
-kubectl get pods -n mythical-payment
-```
-
-![](images/image25.5.png)
-
-- Verify the Envoy sidecar is injected within each pod in the Kubernetes Cluster by running the following command
-
-```bash
-asmctl management check sidecar --namespace=mythical-payment
-```
-
-![](images/image25.7.png)
 
 <a id="step10"></a>
 ### **STEP 10**: Create API's
